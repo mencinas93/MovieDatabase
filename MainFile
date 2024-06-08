@@ -1,0 +1,124 @@
+(1.1) (7 points) Find the path that can be reached from Tom Hanks of no more than 3 hops
+using directional and unidirectional relationships, respectively. (Be sure to do both.)
+
+MATCH path = (tom:Person {name: "Tom Hanks"})-[:ACTED_IN|REVIEWED|PRODUCED|WROTE|FOLLOWS|DIRECTED*1..3]->(target)
+RETURN path
+
+
+
+ 
+
+
+MATCH path = (tom:Person {name: "Tom Hanks"})-[*1..3]-(target)
+RETURN path
+
+
+ 
+
+
+(1.2) (6 points) List the names of all actors together with the number of appearances (i.e.
+ACTED_IN) in movies in the descending (DESC) order of the number of appearances.
+
+MATCH (actor:Person)-[r:ACTED_IN]->(movie:Movie)
+RETURN actor.name AS Actor, COUNT(r) AS Appearances
+ORDER BY Appearances DESC
+
+
+ 
+
+
+
+(1.3) (6 points) List the producer, directors, and cast (i.e., actor/actress) of the movie
+The Matrix in an easy-to-read text format (e.g., using the collect aggregate function).
+
+MATCH (movie:Movie {title: "The Matrix"})
+OPTIONAL MATCH (producer:Person)-[:PRODUCED]->(movie)
+OPTIONAL MATCH (director:Person)-[:DIRECTED]->(movie)
+OPTIONAL MATCH (actor:Person)-[:ACTED_IN]->(movie)
+RETURN 
+movie.title AS Movie,
+collect(DISTINCT producer.name) AS Producers,
+collect(DISTINCT director.name) AS Directors,
+collect(DISTINCT actor.name) AS Cast
+
+ 
+
+
+(1.4) (6 points) Find the names of every pair (two) of actors who co-appeared (i.e. ACTED_IN)
+in exactly 3 movies.
+
+MATCH (actor1:Person)-[:ACTED_IN]->(movie:Movie)<-[:ACTED_IN]-(actor2:Person)
+WHERE actor1.name < actor2.name
+WITH actor1, actor2, COUNT(movie) AS co_appearances
+WHERE co_appearances = 3
+RETURN actor1.name AS Actor1, actor2.name AS Actor2, co_appearances AS NumberOfCoAppearances
+ORDER BY NumberOfCoAppearances DESC, Actor1, Actor2
+
+
+
+
+ 
+
+
+
+2.1(7 points) List the names of top 10 actors together with the number of appearances (i.e.
+ACTED_IN) in movies in the descending (DESC) order of the number of appearances.
+List your cypher statement and the result in your project report.
+
+MATCH (actor:Person)-[r:ACTED_IN]->(movie:Movie)
+RETURN actor.name AS Actor, COUNT(r) AS NumberOfAppearances
+ORDER BY NumberOfAppearances DESC
+LIMIT 10
+
+ 
+
+2.2(6 points) Use cypher to find the number and the genre names of the movie of the title
+“Mulan”.
+List the query statement and the result in your project report.
+
+MATCH (movie:Movie {title: "Mulan"})-[:IN_GENRE]->(genre:Genre)
+RETURN movie.title AS MovieTitle, COUNT(genre) AS NumberOfGenres, collect(genre.name) AS GenreNames
+
+
+ 
+
+
+2.3(10 Points) Plot the histogram of the number of genre names of movies.
+List cypher script you used and show a screenshot of the histogram plot in your project
+report.
+
+MATCH (movie:Movie)-[:IN_GENRE]->(genre:Genre)
+RETURN movie.title AS MovieTitle, COUNT(genre) AS NumberOfGenres
+order by NumberOfGenres desc
+
+
+ 
+
+
+ 
+
+2.4(12 points) Based on the movie genre names, make movie recommendations for the viewers
+who have seen the “Mulan” movie. Explain your movie recommendation idea and how you
+use cypher and the Recommendation DB to make the recommendation.
+List your cypher statement and the recommendation result in your project report.
+
+At first I would identify the Genres that are associated with Mulan. Then I would find other movies that share the same Genres as “Mulan”. Then once I get the movies that have the Genre such as “Mulan” I would rank it by equal to its genre is more highly recommended than to much off a wide range of genres even if it fits. 
+
+
+MATCH (mulan:Movie {title: "Mulan"})-[:IN_GENRE]->(genre:Genre)
+RETURN mulan.title as Movie, collect(genre.name) AS Genres
+
+ 
+
+Here I will finish the code. Where I will do recommendation based on most shared Genres. Also if its exactly its better. 
+
+MATCH (mulan:Movie {title: "Mulan"})-[:IN_GENRE]->(genre:Genre)
+WITH collect(genre) AS mulanGenres
+MATCH (rec:Movie)-[:IN_GENRE]->(genre)
+WHERE genre IN mulanGenres AND rec.title <> "Mulan"
+WITH rec, COUNT(genre) AS sharedGenresCount, collect(genre.name) AS genreNames
+RETURN rec.title AS RecommendedMovie, sharedGenresCount, genreNames
+ORDER BY sharedGenresCount DESC
+LIMIT 10
+
+ 
