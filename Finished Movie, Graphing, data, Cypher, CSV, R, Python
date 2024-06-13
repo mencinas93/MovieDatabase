@@ -1,0 +1,153 @@
+el Encinas
+PROJECT 2
+June 13 of 2024
+Michael Encinas
+
+
+(1.1) (7 points) Find the path that can be reached from Tom Hanks of no more than 3 hops
+using directional and unidirectional relationships, respectively. (Be sure to do both.)
+MATCH path = (tom:Person {name: "Tom Hanks"})-
+[:ACTED_IN|REVIEWED|PRODUCED|WROTE|FOLLOWS|DIRECTED*1..3]->(target)
+RETURN path
+MATCH path = (tom:Person {name: "Tom Hanks"})-[*1..3]-(target)
+RETURN path
+(1.2) (6 points) List the names of all actors together with the number of appearances (i.e.
+ACTED_IN) in movies in the descending (DESC) order of the number of appearances.
+MATCH (actor:Person)-[r:ACTED_IN]->(movie:Movie)
+RETURN actor.name AS Actor, COUNT(r) AS Appearances
+ORDER BY Appearances DESC
+(1.3) (6 points) List the producer, directors, and cast (i.e., actor/actress) of the movie
+The Matrix in an easy-to-read text format (e.g., using the collect aggregate function).
+MATCH (movie:Movie {title: "The Matrix"})
+OPTIONAL MATCH (producer:Person)-[:PRODUCED]->(movie)
+OPTIONAL MATCH (director:Person)-[:DIRECTED]->(movie)
+OPTIONAL MATCH (actor:Person)-[:ACTED_IN]->(movie)
+RETURN
+movie.title AS Movie,
+collect(DISTINCT producer.name) AS Producers,
+collect(DISTINCT director.name) AS Directors,
+collect(DISTINCT actor.name) AS Cast
+(1.4) (6 points) Find the names of every pair (two) of actors who co-appeared (i.e. ACTED_IN)
+in exactly 3 movies.
+MATCH (actor1:Person)-[:ACTED_IN]->(movie:Movie)<-[:ACTED_IN]-(actor2:Person)
+WHERE actor1.name < actor2.name
+WITH actor1, actor2, COUNT(movie) AS co_appearances
+WHERE co_appearances = 3
+RETURN actor1.name AS Actor1, actor2.name AS Actor2, co_appearances AS
+NumberOfCoAppearances
+ORDER BY NumberOfCoAppearances DESC, Actor1, Actor2
+2.1(7 points) List the names of top 10 actors together with the number of appearances (i.e.
+ACTED_IN) in movies in the descending (DESC) order of the number of appearances.
+List your cypher statement and the result in your project report.
+MATCH (actor:Person)-[r:ACTED_IN]->(movie:Movie)
+RETURN actor.name AS Actor, COUNT(r) AS NumberOfAppearances
+ORDER BY NumberOfAppearances DESC
+LIMIT 10
+2.2(6 points) Use cypher to find the number and the genre names of the movie of the title
+“Mulan”.
+List the query statement and the result in your project report.
+MATCH (movie:Movie {title: "Mulan"})-[:IN_GENRE]->(genre:Genre)
+RETURN movie.title AS MovieTitle, COUNT(genre) AS NumberOfGenres,
+collect(genre.name) AS GenreNames
+2.3(10 Points) Plot the histogram of the number of genre names of movies.
+List cypher script you used and show a screenshot of the histogram plot in your project
+report.
+MATCH (movie:Movie)-[:IN_GENRE]->(genre:Genre)
+RETURN movie.title AS MovieTitle, COUNT(genre) AS NumberOfGenres
+order by NumberOfGenres desc
+2.4(12 points) Based on the movie genre names, make movie recommendations for the viewers
+who have seen the “Mulan” movie. Explain your movie recommendation idea and how you
+use cypher and the Recommendation DB to make the recommendation.
+List your cypher statement and the recommendation result in your project report.
+At first I would identify the Genres that are associated with Mulan. Then I would find
+other movies that share the same Genres as “Mulan”. Then once I get the movies that have
+the Genre such as “Mulan” I would rank it by equal to its genre is more highly
+recommended than to much off a wide range of genres even if it fits.
+MATCH (mulan:Movie {title: "Mulan"})-[:IN_GENRE]->(genre:Genre)
+RETURN mulan.title as Movie, collect(genre.name) AS Genres
+Here I will finish the code. Where I will do recommendation based on most shared Genres.
+Also if its exactly its better.
+MATCH (mulan:Movie {title: "Mulan"})-[:IN_GENRE]->(genre:Genre)
+WITH collect(genre) AS mulanGenres
+MATCH (rec:Movie)-[:IN_GENRE]->(genre)
+WHERE genre IN mulanGenres AND rec.title <> "Mulan"
+WITH rec, COUNT(genre) AS sharedGenresCount, collect(genre.name) AS genreNames
+RETURN rec.title AS RecommendedMovie, sharedGenresCount, genreNames
+ORDER BY sharedGenresCount DESC
+LIMIT 10
+3 Follow the instructions given in the PowerPoints, Neo4j_3_2_Cypher-Updates.pdf, to create a
+graph database called GraphDemos.
+3.1 (10 points) Create the graphs G and K in GraphDemos and run the following
+cypher query in the Browser with the Browser setting Connect result nodes on:
+match (n) return n
+to return all the graph data in the database. Show a screenshot of the Graph format output
+and make sure to arrange the graph layout as that shown in the PowerPoint.
+3.2 (7 points) Run the following cypher query on the GraphDemos database:
+match path = (v:G)-[:CONN*3]->(v:G)
+return path
+This query returns all the directed triangles in G. In your project report, show a screenshot of the
+graph result and list all the directed triangles found.
+If you run the query but return count(path) instead. Explain the discrepancy between the
+count from the query and actual number of triangles found.
+Triangle 1: 1, 4, 6, 1
+Triangle 2: 4, 6, 1, 4
+Triangle 3: 6,1,4,6
+Triangle 4: 7,4,6,7
+Triangle 5: 4,6,7,4
+Triangle 6: 6,7,4,6
+Count is correct from me doing it with count(path)
+3.3 (8 points) Similar to (2.3), write cypher queries to fund all (undirected) triangles in G and the
+count of these triangles. List the scripts and show a screenshot of the found triangles in your
+report.
+Explain the discrepancy between the count from the query and actual number triangles
+found.
+MATCH (a:G)-[:CONN]-(b:G),
+(b)-[:CONN]-(c:G),
+(c)-[:CONN]-(a)
+WHERE id(a) < id(b) AND id(b) < id(c)
+RETURN a, b, c
+MATCH (a:G)-[:CONN]-(b:G),
+(b)-[:CONN]-(c:G),
+(c)-[:CONN]-(a)
+WHERE id(a) < id(b) AND id(b) < id(c)
+RETURN count(*) AS triangleCount
+Undirected has 8 count since direction don’t matter and we don’t check duplicates. Also if
+you compare Undirected with Directed, Directed does count duplicates and Undirected
+does not.
+4 (15 points) “The Petersen graph is an undirected graph with 10 vertices and 15 edges. It is a
+small graph that serves as a useful example and counterexample for many problems in graph
+theory.” (https://en.wikipedia.org/wiki/Petersen_graph)
+Use the LOAD CSV statement to create a Petersen graph as shown below using the node label
+:Petersen in the GraphDemos database. (Reference: Neo4j_3_6_Cypher Load CSV Files.pdf)
+For this problem, you need to create a CSV file to define the graph and use it with the LOAD CSV
+statement.
+List your cypher script and the CSV file, and include a screenshot of a good layout of the Petersen
+graph in your project report.
+Peterson_graph.csv
+Node1,Node2
+1,6
+1,5
+1,2
+2,7
+2,3
+3,8
+3,4
+4,5
+4,9
+5,10
+6,8
+6,9
+7,9
+7,10
+8,10
+// Step 1: Create Nodes
+LOAD CSV WITH HEADERS FROM 'file:///Petersen_graph.csv' AS row
+MERGE (n1:Petersen {id: toInteger(row.Node1)})
+MERGE (n2:Petersen {id: toInteger(row.Node2)})
+// Step 2: Create Relationships
+LOAD CSV WITH HEADERS FROM 'file:///Petersen_graph.csv' AS row
+MATCH (n1:Petersen {id: toInteger(row.Node1)})
+MATCH (n2:Petersen {id: toInteger(row.Node2)})
+MERGE (n1)-[:CONNECTED_TO]-(n2);
+MATCH (n:Petersen)-[:CONNECTED_TO]-(m)
+RETURN n, m
